@@ -30,7 +30,7 @@ class TuningWrapper(Logger):
                                retrieve_kw( kw, 'batchMethod', BatchSizeMethod.MinClassSize \
         if not 'batchSize' in kw or kw['batchSize'] is NotSet else BatchSizeMethod.Manual         ) 
                                  )
-    self.batchSize             = retrieve_kw( kw, 'batchSize',             NotSet                 )
+
     epochs                     = retrieve_kw( kw, 'epochs',                10000                  )
     maxFail                    = retrieve_kw( kw, 'maxFail',               50                     )
     self.useTstEfficiencyAsRef = retrieve_kw( kw, 'useTstEfficiencyAsRef', False                  )
@@ -72,6 +72,8 @@ class TuningWrapper(Logger):
       self._historyCallback = PerformanceHistory( display = retrieve_kw( kw, 'showEvo', 50 ) )
     else:
       self._fatal("TuningWrapper not implemented for %s", coreConf)
+
+    self.batchSize             = retrieve_kw( kw, 'batchSize',             NotSet                 )
     checkForUnusedVars(kw, self._debug )
     del kw
     # Set default empty values:
@@ -86,6 +88,8 @@ class TuningWrapper(Logger):
                                 oidx=0 ) )
     elif coreConf() is TuningToolCores.FastNet:
       self._emptyTarget = None
+     
+
     # Set holders:
     self._trnData    = self._emptyData
     self._valData    = self._emptyData
@@ -428,8 +432,6 @@ class TuningWrapper(Logger):
         for ref in references:
           track_n[ref] = self.__dict_to_discr( self.networks[1][et][eta][ref]['sort_%1.3i'%(sort)], 'track', pruneLastLayer=True )
       calo_nn = {}
-      # from RingerCore import keyboard
-      # keyboard()
       for ref in references:
         calo_nn = self.__dict_to_discr( self.networks[0][et][eta][ref]['sort_%1.3i'%(sort)], 'calo', pruneLastLayer=True )
 
