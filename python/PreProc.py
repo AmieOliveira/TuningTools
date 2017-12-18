@@ -437,20 +437,16 @@ class UnitaryRMS( PrepObj ):
 class Relevance( PrepObj ):
   """
     Used to determine the relevance of input variables.
-    Being used for tracking data with TrackSimpleNorm normalization.
+    Substitutes one of the input variables for its mean.
+    Should be used with the usual normalization applied 
+    to the data.
   """
-  _streamerObj = LoggerRawDictStreamer(toPublicAttrs = {'_var','_factors'})
-  _cnvObj = RawDictCnv(toProtectedAttrs = {'_var','_factors'})
+  _streamerObj = LoggerRawDictStreamer(toPublicAttrs = {'_var'})
+  _cnvObj = RawDictCnv(toProtectedAttrs = {'_var'})
   def __init__(self, var = 0, d = {}, **kw):
     d.update( kw ); del kw
     PrepObj.__init__(self, d)
     checkForUnusedVars(d, self._warning)
-    self._factors = [0.05,  # deltaeta1
-                     1.0,   # deltaPoverP
-                     0.05,  # deltaPhiReescaled
-                     1.0,   # d0significance
-                     0.2,   # d0pvunbiased
-                     1.0  ] # TRT_PID (from eProbabilityHT)
     self._var = var
     del d
 
@@ -469,6 +465,8 @@ class Relevance( PrepObj ):
   def _apply( self, data ):
     # NOTE: is it a problem that I don't deepcopy the data?
     if isinstance(data, (list,tuple)):
+      if self._var >= len(data[0][0,:]):
+        self._fatal("Cannot apply Relevance PreProc. Data has not enough patterns.")
       if len(data) == 0: return data
       import numpy as np
       import copy
@@ -476,11 +474,10 @@ class Relevance( PrepObj ):
       mean = ( sum(data[0][:,self._var]) + sum(data[1][:,self._var]) )/( len(data[0][:,self._var]) + len(data[1][:,self._var]) )
       for conj in data:
         tmp = copy.deepcopy(conj)
-        for i in range(len(self._factors)):
+        for i in range(len(conj[0,:])):
           if i == self._var:
             for j in range(len(tmp[:,i])):
               tmp[j,i] = mean
-          tmp[:,i] = tmp[:,i]/self._factors[i]
         ret.append(tmp)
       return ret
     else:
@@ -719,6 +716,57 @@ class FirstNthPatterns(PrepObj):
     except IndexError, e:
       self._fatal("Data has not enought patterns!\n%s", str(e), IndexError)
     return ret
+
+
+class MinusNthPattern( PrepObj ):
+  """
+    Delet nth pattern from data
+  """
+
+  _streamerObj = LoggerRawDictStreamer(toPublicAttrs = {'_var'})
+  _cnvObj = RawDictCnv(toProtectedAttrs = {'_var'})
+
+  def __init__(self, var = 0, d = {}, **kw):
+    d.update( kw ); del kw
+    PrepObj.__init__(self, d)
+    checkForUnusedVars(d, self._warning)
+    self._var = var
+    del d
+
+  def __str__( self ):
+    """
+      String representation of the object.
+    """
+    return "Removal of variable %i"%( self._var )
+
+  def shortName( self ):
+    """
+      Short string representation of the object.
+    """
+    return "M%dP"%( self._var )
+
+  def _apply( self, data ):
+    # FIXME: Not complete!
+    import numpy as np
+    try: 
+      if isinstance(data, (tuple, list,)):
+        ret = []
+        for cdata in data:
+          tmp = np.concatenate( (cdata[ npCurrent.access( pidx=slice(0,self._var), oidx=':' ) ], 
+                                 cdata[ npCurrent.access( pidx=slice(self._var+1,None), oidx=':' ) ]),
+                                axis=1 )
+          ret.append( tmp )
+      else:
+        ret = np.concatenate( (data[ npCurrent.access( pidx=slice(0,self._var), oidx=':' ) ], 
+                               data[ npCurrent.access( pidx=slice(self._var+1,None), oidx=':' ) ]),
+                              axis=1 )
+    except IndexError, e:
+      self._fatal("Data has not enought patterns!\n%s", str(e), IndexError)
+    return ret
+
+  def takeParams( self, trnData ):
+    return self._apply(trnData)
+
 
 class RingerRp( Norm1 ):
   """
