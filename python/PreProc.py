@@ -501,7 +501,7 @@ class TrackSimpleNorm( PrepObj ):
     self._factors = [0.05,  # deltaeta1
                      1.0,   # deltaPoverP
                      0.05,  # deltaPhiReescaled
-                     6.0,   # d0significance
+                     1.0,   # d0significance
                      0.2,   # d0pvunbiased
                      1.0  ] # TRT_PID (from eProbabilityHT)
     del d
