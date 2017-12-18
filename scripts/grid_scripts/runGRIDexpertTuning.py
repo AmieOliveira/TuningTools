@@ -38,6 +38,7 @@ parentReqParser = parentParser.add_argument_group("required arguments", '')
 
 if clusterManagerConf() is ClusterManager.Panda:
   preInitLogger.fatal("Script not yet implemented for Panda Cluster Manager")
+  
   # Suppress/delete the following options in the main-job parser:
   tuningExpertParser.delete_arguments( 'outputFileBase', 'data', 'crossFile', 'confFileList'
                                   , 'neuronBounds', 'sortBounds', 'initBounds', 'ppFile'
